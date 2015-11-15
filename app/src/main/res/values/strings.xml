@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">NessieC1</string>
+    <string name="account_error_message">Oops! Something went wrong</string>
+    <string name="account_hello_message">"Hello "</string>
+    <string name="account_balance_message">"Your balance is: "</string>
+
+</resources>
