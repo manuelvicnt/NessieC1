@@ -2,9 +2,9 @@ package manuelvicnt.com.nessiec1;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.View;
@@ -16,6 +16,8 @@ import com.reimaginebanking.api.java.NessieClient;
 import com.reimaginebanking.api.java.NessieException;
 import com.reimaginebanking.api.java.NessieResultsListener;
 import com.reimaginebanking.api.java.models.Account;
+import com.reimaginebanking.api.java.models.Address;
+import com.reimaginebanking.api.java.models.Customer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private Button loginButton;
     private Button submitButton;
     private EditText nameEditText;
+
+    private Customer myCustomer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
 
                     final ProgressDialog progressDialog = showLoadingMessage();
-                    getCustomerAccount(customerName, progressDialog);
+                    getCustomerByName(customerName, false, progressDialog);
                 }
             }
         });
@@ -80,21 +84,20 @@ public class MainActivity extends AppCompatActivity {
                 } else {
 
                     final ProgressDialog progressDialog = showLoadingMessage();
-                    createCustomerAccount(customerName, progressDialog);
+                    createCustomer(customerName, progressDialog);
                 }
             }
         });
     }
 
-    private void createCustomerAccount(final String customerName, final ProgressDialog progressDialog) {
+    private void createCustomer(final String customerName, final ProgressDialog progressDialog) {
 
-        nessieClient.createAccount(customerName, createAccount(customerName), new NessieResultsListener() {
-            @Override
-            public void onSuccess(Object o, NessieException e) {
+        nessieClient.createCustomer(createCustomerObject(customerName), new NessieResultsListener() {
+            @Override public void onSuccess(Object o, NessieException e) {
 
                 if (e == null) {
 
-                    getCustomerAccount(customerName, progressDialog);
+                    getCustomerByName(customerName, true, progressDialog);
                 } else {
 
                     progressDialog.dismiss();
@@ -104,9 +107,58 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void getCustomerAccount(String customerName, final ProgressDialog progressDialog) {
+    private void getCustomerByName(final String customerName, final boolean createAccount, final ProgressDialog progressDialog) {
 
-        nessieClient.getAccount(customerName, new NessieResultsListener() {
+        nessieClient.getCustomerByFirstName(customerName, new NessieResultsListener() {
+            @Override public void onSuccess(Object o, NessieException e) {
+
+                if (e == null) {
+
+                    myCustomer = (Customer) o;
+
+                    if (createAccount) {
+                        createCustomerAccount(customerName, progressDialog);
+                    } else {
+                        getCustomerAccount(progressDialog);
+                    }
+
+                } else {
+
+                    progressDialog.dismiss();
+
+                    if (createAccount) {
+                        displayCreateAccountError();
+                    } else {
+                        displayLoginAccountError();
+                    }
+
+                }
+            }
+        });
+
+    }
+
+    private void createCustomerAccount(final String customerName, final ProgressDialog progressDialog) {
+
+        nessieClient.createAccount(myCustomer.get_id(), createAccount(customerName), new NessieResultsListener() {
+            @Override
+            public void onSuccess(Object o, NessieException e) {
+
+                if (e == null) {
+
+                    getCustomerAccount(progressDialog);
+                } else {
+
+                    progressDialog.dismiss();
+                    displayCreateAccountError();
+                }
+            }
+        });
+    }
+
+    private void getCustomerAccount(final ProgressDialog progressDialog) {
+
+        nessieClient.getAccountMostRecentUsedByCustomer(myCustomer.get_id(), new NessieResultsListener() {
             @Override
             public void onSuccess(Object o, NessieException e) {
 
@@ -127,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent goToMyAccountIntent = new Intent(MainActivity.this, MyAccountActivity.class);
         goToMyAccountIntent.putExtra(MyAccountActivity.PASS_NAME_TO_ACCOUNT_ACTIVITY,
-                myAccount.getCustomer());
+                myCustomer.getFirst_name());
 
         goToMyAccountIntent.putExtra(MyAccountActivity.PASS_BALANCE_TO_ACCOUNT_ACTIVITY,
                 Double.valueOf(myAccount.getBalance()));
@@ -139,11 +191,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private Customer createCustomerObject(String customerName) {
+
+        return new Customer.Builder()
+                .firstName(customerName)
+                .lastName(customerName)
+                .address(new Address("VA", "streetName", "streetNumber", "city", "20105"))
+                .build();
+    }
+
     private Account createAccount(String customerName) {
 
-        return new Account( customerName, AccountType.CREDITCARD,
-                            customerName, 0, 0, null,
-                            customerName);
+        return new Account.Builder()
+                .type(AccountType.CREDITCARD)
+                .nickname(customerName)
+                .rewards(100)
+                .balance(100)
+                .build();
     }
 
     private ProgressDialog showLoadingMessage() {

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/Users/ewm686/Documents/Repos/NessieC1/app/libs/java-wrapper-1.0.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="d546b2bad50f05ec5cee6608f7820bf4858805e3">
+        <dex dex="/Users/ewm686/Documents/Repos/NessieC1/app/build/intermediates/pre-dexed/debug/java-wrapper-1.0-0d0de2e776dc866378a7540ebadc12b4456c6132.jar" />
+    </item>
+
+</items>
